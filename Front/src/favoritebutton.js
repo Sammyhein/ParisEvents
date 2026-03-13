@@ -12,8 +12,8 @@ export function favorite(containerName, counter, carte){
     //bouton.textContent = "favoris"
 
     let img = document.createElement("img")
-    let imageCoeurVide = '/src/Heartvide.png'
-    let imageCoeurRemplis = '/src/HeartRemplis.png'
+    let imageCoeurVide = '../src/Heartvide.png'
+    let imageCoeurRemplis = '../src/HeartRemplis.png'
     img.src = imageCoeurVide
     img.alt = "favoris"
     img.className = "heart"
