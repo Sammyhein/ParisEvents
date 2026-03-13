@@ -1,0 +1,147 @@
+import './style.css'
+import { createBoutonSeeMore } from './boutonSeeMore.js';
+import { showReturnBouton } from './returnBouton.js';
+import { favorite } from './favoritebutton.js';
+import { filtreFavoris } from './filtreFavoris.js';
+//import { chargerPlus } from '../chargerPlus.js';
+
+
+const event = document.getElementById('event')
+const eventTemplate = document.querySelector("[data-event-template]")
+const searchInput = document.getElementById("search")
+const returnBouton = document.getElementById("returnBouton")
+const erreurFavoris = document.getElementById("erreurFavoris")
+
+// https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/que-faire-a-paris-/records?limit=20
+
+let limit = 20
+let offset = 0
+let events = []
+let counter = {value : 0}
+
+async function fetchApi() {
+  try {
+
+    const response = await fetch(
+      `https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/que-faire-a-paris-/records?limit=${limit}&offset=${offset}`
+    );
+    const apiData = await response.json();
+    console.log(apiData);
+
+    searchInput.addEventListener("input", e => {
+
+        let value = e.target.value.trim().toLowerCase()
+
+        let hasResults = false //ceci va me servir quand il n'y aura pas de résultat
+
+        events.forEach( input =>{
+            const isVisible = input.titre.toLowerCase().includes(value) || input.lieu?.toLowerCase().includes(value) || input.adresse?.toLowerCase().includes(value) || input.ville?.toLowerCase().includes(value) || input.tagName?.toLowerCase().includes(value)
+            input.element.classList.toggle("hide", !isVisible)
+            //console.log(events)
+            if (isVisible){
+              hasResults = true // si il y a au moins 1 resultat qui s'affiche alors on le transforme à true
+              returnBouton.hidden = true
+            }
+        })
+
+        if (!hasResults){ // si il n'y a pas de "isVisible", et donc que hasResults reste false alors on m'indique une erreur
+          //console.log("erreur")
+          returnBouton.hidden = false
+          showReturnBouton(searchInput)
+          erreurFavoris.hidden = true
+        }
+    })
+    
+    events = apiData.results.map(evenement => {
+      //je lie et je clone mon template que j'ai mis dans mon html
+      const currentEvent = eventTemplate.content.cloneNode(true);
+      //console.log(evenement)
+
+      //je définie mes éléments que j'ai mis dans le template HTML
+      const boite = currentEvent.querySelector(".boite");
+      const img = currentEvent.querySelector(".image");
+      const favoris = currentEvent.querySelector(".boutonFavoris_container");
+      const tags = currentEvent.querySelector(".tags") 
+      const lieu = currentEvent.querySelector(".lieu");
+      const title = currentEvent.querySelector(".title");
+      const adress = currentEvent.querySelector(".adress");
+      const dateStart = currentEvent.querySelector(".dateStart");
+      const dateEnd = currentEvent.querySelector(".dateEnd");
+      const text = currentEvent.querySelector(".text");
+  
+      // je remplie les éléments
+      img.src = evenement.cover_url;
+
+      if (evenement.qfap_tags !== null){
+      let tagNames = evenement.qfap_tags.split(";")
+
+      for( let i = 0 ; i < tagNames.length ; i++){
+        let tag = document.createElement("button")
+        tag.className = "tag"
+        tag.textContent = tagNames[i]
+        tags.appendChild(tag)
+      }}
+
+      // cette partie c'est pour le bouton favoris ! Initialement, chaque cartes ne sont pas considéré comme "favoris"
+      // On fait en sorte qu'il devienne favoris quand on appuie sur le bouton (voir la fiche favoritebutton)
+
+      boite.dataset.favori = "false"
+      favorite(favoris, counter, boite)
+      
+
+      // lieu.textContent = evenement.address_name
+
+      title.textContent = evenement.title;
+
+
+      if(evenement.address_street !== null && evenement.address_zipcode !== null || evenement.address_city !== null){
+        adress.textContent = `${evenement.address_street}, ${evenement.address_zipcode} ${evenement.address_city}`
+      }
+
+      if(evenement.date_start != null){
+        //Cette partie je formate les dates pour l'afficher commme je le souhaite et l'heure
+        const rawDate = evenement.date_start
+        const d = new Date(rawDate)
+
+        const formatted =`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2, '0')}.${d.getFullYear()}`
+        const time = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2, "0")}`
+
+        dateStart.textContent = `Début : ${formatted} à ${time}`
+      }
+
+       if(evenement.date_end != null){
+        const rawDate = evenement.date_end
+        const d = new Date(rawDate)
+
+        const formatted =`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2, '0')}.${d.getFullYear()}`
+        const time = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2, "0")}`
+
+        dateEnd.textContent = `Fin : ${formatted} à ${time}`
+      }
+
+      text.textContent = evenement.lead_text;
+
+      // Je n'oublie pas mon bouton
+      const bouton = createBoutonSeeMore(evenement.description, boite);
+      boite.querySelector(".boiteText").appendChild(bouton);
+
+      // j'affiche le résultat
+      event.appendChild(currentEvent);
+
+      // On demande ce qu'il nous retourne
+      return { image : evenement.cover_url , tagName : evenement.qfap_tags, titre : evenement.title , text : evenement.lead_text , lieu : evenement.address_name, adresse : evenement.address_street, ville : evenement.address_city , element : boite}
+      
+    });
+
+    //j'active mon filtre Favoris, il faut que je le fasse en dehors de la boucle pour que ça marche
+      filtreFavoris(events, counter)
+
+
+    return apiData;
+  } catch (error) {
+    console.log(error);
+  }
+}
+fetchApi();
+
+// chargerPlus(limit, offset, fetchApi)
