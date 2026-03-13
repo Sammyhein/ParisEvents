@@ -1,20 +1,17 @@
+import imageCoeurVide from './images/Heartvide.png'
+import imageCoeurRemplis from './images/HeartRemplis.png'
+
 export function favorite(containerName, counter, carte){
 
     const filtre = document.querySelector(".filtreFavoris")
-
-    //let count = 0
-    //console.log(count)
 
     filtre.innerText = `Favoris (${counter.value})`
 
     let bouton = document.createElement('button')
     bouton.className = "boutonFavoris"
-    //bouton.textContent = "favoris"
 
     let img = document.createElement("img")
-    let imageCoeurVide = '../src/images/Heartvide.png' 
-    let imageCoeurRemplis = '/src/images/HeartRemplis.png'
-    img.src = imageCoeurVide
+    img.src = imageCoeurVide   // plus de chaîne de caractères, on utilise la variable importée
     img.alt = "favoris"
     img.className = "heart"
 
@@ -22,18 +19,15 @@ export function favorite(containerName, counter, carte){
     containerName.appendChild(bouton)
 
     bouton.addEventListener("click", () =>{
-        if(img.src.includes(imageCoeurVide)){
-            img.src = imageCoeurRemplis // on rempli le coeur
-            counter.value ++ // on ajoute 1 au compteur
-            carte.dataset.favori = "true" // on change le statue de la data pour qu'elle devienne "true"
-            
-        } else{
-            img.src = imageCoeurVide //effet inverse que au dessus
-            counter.value -- 
+        if(img.src.includes("Heartvide")){   // ← on adapte aussi ce check
+            img.src = imageCoeurRemplis
+            counter.value ++
+            carte.dataset.favori = "true"
+        } else {
+            img.src = imageCoeurVide
+            counter.value --
             carte.dataset.favori = "false"
-            
         }
         filtre.innerText = `Favoris (${counter.value})`
-        console.log(counter.value)
     })
 }
